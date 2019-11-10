@@ -1,0 +1,677 @@
+<!doctype html>
+<html>
+  <head>
+    <title>United States of Europe</title>
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-slider/9.5.3/css/bootstrap-slider.min.css" />
+    <style type="text/css">
+      body{
+        margin-top:30px;
+      }
+      #messageArea{
+         display:none;
+      }
+      #mapContainer{
+         display:none;
+      }
+    </style>
+    <script src="/socket.io/socket.io.js"></script> <!-- automatic response by server (if socket.io server is created) http://localhost:<port>/socket.io/socket.io.js -->
+    <script src="https://code.jquery.com/jquery-1.11.1.js"></script>
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jQuery-Knob/1.2.13/jquery.knob.min.js"></script>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-slider/9.5.3/bootstrap-slider.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery-noty/2.3.8/packaged/jquery.noty.packaged.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery-noty/2.3.8/themes/bootstrap.min.js"></script>
+
+  </head>
+  <body>
+
+
+    <nav class="navbar navbar-default">
+      <div class="container-fluid">
+        <div class="navbar-header">
+          <a class="navbar-brand" href="#">Viggo</a>
+        </div>
+        <div class="collapse navbar-collapse">
+          <button type="button" class="btn btn-default navbar-btn navbar-right" id="btn_feedback">Feedback</button>
+        </div>
+      </div>
+    </nav>
+
+    <div class="container">
+      <div id="userFormArea" class="row">
+        <div class="col-md-6">
+            <div class="panel panel-primary">
+              <div class="panel-heading">
+                <h2><strong>Viggo</strong></h2>
+              </div>
+              <div class="panel-body">
+                <form id="userForm">
+                  <div class="form-group">
+                      <label>Enter Name</label> 
+                      <input class="form-control" id="username">
+                    <div class="row">
+                      <div class="col-xs-6">
+                        <br />
+                        <label>Choose Server</label>
+                        <select class="form-control" id="iniServer"></select>
+                      </div>
+                      <div class="col-xs-6">
+                        <br />
+                        <label>Select Starting Country</label> 
+                          <select class="form-control" id="iniCountry"></select>
+                      </div> <!-- columns -->
+                    </div> <!-- row -->
+                    <br />
+                    <input type="submit" class="btn btn-primary" value="Conquer!">
+                 </form>
+              </div>
+            </div>
+          </div>
+        </div>  
+      </div>
+
+      <div id="messageArea" class="row">
+        <div class="col-sm-4">
+          <div class="panel panel-primary">
+             <div class="panel-heading">
+                <h4>Empire Breakdown</h4>
+             </div>
+             <div class="panel-body">   
+               <ul class="list-group" id="user_countries"></ul>
+             </div>
+          </div>
+          <div class="panel panel-primary">
+             <div class="panel-heading">
+                <h4>Online players</h4>
+             </div>
+             <div class="panel-body">   
+               <h4 id="colName"></h4>
+               <ul class="list-group" id="users"></ul>
+             </div>
+             <div class="panel-footer">       
+                <form id="messageForm">
+                  <div class="form-group">
+                      <label>Enter Message</label> 
+                      <textarea class="form-control" id="message"></textarea>
+                      <br />
+                      <input type="submit" class="btn btn-primary" value="Send Message">
+                  </div>
+                </form>
+                <div class="chat" id="chat"></div>
+              </div>
+          </div>
+        </div>
+
+        <div class="col-sm-8">
+             <div class="panel panel-primary">
+                <div class="panel-heading">
+                   <h4><strong>Viggo: </strong>Europe</h4>
+                </div>
+                <div class="panel-body">
+                  <div id="mapContainer" style="height:600px;margin-top:20px;margin-bottom:20px;"></div>
+                </div>
+             </div>         
+        </div>
+      </div>
+      
+    </div>
+
+    <!-- <div class="row">
+      <div id="mapContainer" style="height:600px;margin-top:20px;margin-bottom:20px;"></div>
+    </div> -->
+
+    <!-- Modal -->
+    <div id="myModal" class="modal fade" role="dialog">
+      <div class="modal-dialog modal-md">
+
+        <!-- Modal content-->
+        <div class="modal-content">
+          <div class="modal-header">
+            <button type="button" class="close" data-dismiss="modal">&times;</button>
+            <h4 class="modal-title" id="myModalHeader">Modal Header</h4>
+          </div>
+          <div class="modal-body">
+            
+            
+            <h3 id="myModalBodyTitle"></h3>
+
+            <ul class="nav nav-tabs nav-justified">
+              <li role="presentation" class="active"><a data-toggle="tab" href="#assembleTroops"><strong>Choose number of troops to send to this country</strong></a></li>
+              <!-- <li role="presentation"><a data-toggle="tab" href="#sendTroops">Send Troops</a></li> -->
+            </ul>
+            <div class="tab-content">
+              <div id="assembleTroops" class="tab-pane fade in active">
+                <div class=row>
+                  <!-- <div class="col-sm-12 text-center"><h5><strong>Choose number of troops to send to this country</strong></h5></div> -->
+                  <div class="col-sm-5 text-center">
+                    <h5> Total to send</h5>
+                    <div><input type="text" value="1" id="totaltroopdial" data-width="200" data-thickness=".35" data-displayPrevious=false data-readOnly=true></div>
+                  </div>
+                  <div class="col-sm-7"><h5>Choose from troops deployed nearby</h5>
+                    <div id="loadingSliders"><img src="https://upload.wikimedia.org/wikipedia/commons/d/de/Ajax-loader.gif" width="32" height="32" data-file-width="32" data-file-height="32"></div>
+                    <div id="myModalRightPane" class="col-sm-12"></div>
+                  </div>
+                </div>
+              </div>
+              <!-- <div id="sendTroops" class="tab-pane fade">
+                <p id="myModalBodyTitle"></p>
+                <div><input type="text" value="1" id="troopdial" data-width="100" data-thickness=".35" data-displayPrevious=true></div>
+                <p>Choose country to send troops</p>
+                <select class="form-control" id="neighbours">
+                </select>
+              </div> -->
+            </div>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-default" id="btn_sendtroop">Send Troops</button>
+            <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <div id="loadingModal" class="modal fade" role="dialog">
+      <div class="modal-dialog modal-sm text-center" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+              Sending Troops ...
+            </div>
+            <div class="modal-body">
+              <img src="https://upload.wikimedia.org/wikipedia/commons/d/de/Ajax-loader.gif" width="32" height="32" data-file-width="32" data-file-height="32">
+            </div>
+        </div>
+        
+      </div>
+    </div>
+
+
+    <div id="feedbackModal" class="modal fade" role="dialog">
+      <div class="modal-dialog modal-sm text-center" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+              Feedback
+            </div>
+            <div class="modal-body">
+              <form id="feedbackForm">
+                <div class="form-group">
+                  <label for="inputFeedback">Let me know what you think:</label>
+                  <input type="comment" class="form-control" id="inputFeedback">
+                </div>
+                <button type="submit" class="btn btn-default">Submit</button>
+              </form>
+            </div>
+        </div>
+        
+      </div>
+    </div> 
+
+    <div id="endGameModal" class="modal fade" role="dialog">
+      <div class="modal-dialog modal-sm text-center" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+              <h4 id="endGameModalHeader"></h4>
+            </div>
+            <div class="modal-body">
+              <h5 id="endGameModalMsg"></h5>
+            </div>
+        </div>
+        
+      </div>
+    </div> 
+
+    <script>
+      $(function(){
+
+        //socketIO
+        var socket = io.connect();
+        var $messageForm = $('#messageForm');
+        var $message = $('#message');
+        var $chat = $('#chat');
+        var $userForm = $('#userForm');
+        var $userFormArea = $('#userFormArea');
+        var $messageArea = $('#messageArea');
+        var $users = $('#users');
+        var $username = $('#username');
+
+        var $mapContainer = $('#mapContainer');
+        var $colName = $('#colName').html();
+
+        var score;
+        var gamestarted = false;
+
+        $userForm.submit(function(e){
+          e.preventDefault();
+          //console.log({username: $username.val(), iniServer: $('#iniServer').val(), iniCountry: $('#iniCountry').val()});
+          socket.emit('new user request', {username: $username.val(), iniServer: $('#iniServer').val(), iniCountry: $('#iniCountry').val()});
+        });
+
+        function updateColorAxis(mapData){ //set colours for up to 10 players
+          
+          var lookup = {};
+          var items = mapData;
+          var result = [];
+          
+          var colours = ["#D5D8DC",
+                          "#B36305", //bakerloo
+                          "#0098D4", //victoria
+                          "#E32017", //central
+                          "#FFD300", //circle
+                          "#003688", //piccadilly
+                          "#9B0056", //metropolitan
+                          "#00A4A7", //DLR
+                          "#A0A5A9", //jubilee
+                          "#00782A", //district
+                          "#95CDBA", //waterloo and city
+                          "#84B817", //tramlink
+                          "#F3A9BB", //hammersmith
+                          "#EE7C0E", //overground
+                          "#E21836", //cable
+                          "#7156A5" //crossrail
+                          ]
+          //console.log(mapData);
+          for (var item, i = 0; item = items[i++];) {
+            var name = (item.controlleduser=="") ? "Unoccupied":item.controlleduser;
+
+            if (!(name in lookup)) {
+              lookup[name] = 1;
+              result.push({from: item.value, to: item.value, color: colours[item.value], name: name});
+            }
+          }
+          //console.log(result);
+          return result;
+        }
+
+        function updateUserData(mapData){ //fog of war, cannot see others
+          //console.log("updating user data");
+          var userMapData = [];
+          var obj ={};
+          html="";
+          mapData.sort(function(a, b) {
+              return b.datavalue - a.datavalue;
+          });
+          for (var i in mapData){
+            obj = jQuery.extend(true, {}, mapData[i]); //dont shallow-copy, need to deep-copy to avoid original results change!
+            if ($username.val() != mapData[i].controlleduser){
+                obj["datavalue"] = 0;  //set value to 0
+            } else {
+                html += '<li class="list-group-item"><strong>'+obj["name"]+"</strong>: "+ '<span class="label label-default">'+obj["datavalue"]+'</span>';
+               //show user breakdown
+            }
+            userMapData.push(obj);
+          }
+          $('#user_countries').html(html);
+          return userMapData;
+        }
+
+        $messageForm.submit(function(e){
+          e.preventDefault();
+          socket.emit('send message', {msg:$message.val(), colName:$colName, username:$username.val()});
+          $message.val('');
+        });
+
+        $message.keypress(function(event) { //messagebox enter key event
+            if (event.which == 13) {
+                event.preventDefault();
+                $messageForm.submit();
+            }
+        });
+
+        socket.on('new message', function(data){
+          if ($username.val() != "" && data.colName ==  $colName){
+            $chat.prepend('<p><strong>'+data.user+': </strong>'+data.msg+'</p>');
+          }
+        });
+
+        socket.on('select area',function(data){
+          if ($username.val() != "" && data.colName ==  $colName){
+            //flash to notify
+            map.highcharts().get(data.area_id).select();
+            window.setTimeout(function test(){
+              map.highcharts().get(data.area_id).select();
+            },200);
+          }
+        });
+
+        socket.on('transfer area data value completed', function(data){
+          if ($username.val() != "" && data.colName ==  $colName){         
+            
+            socket.emit('request server side update',{colName: $colName});
+            noty({layout: 'topRight', text: data.msg, theme:'bootstrapTheme', timeout:3000});
+            // if($username.val() == data.controlleduser){
+            //   noty({layout: 'topRight', text: data.msg, theme:'bootstrapTheme', timeout:3000}); // notify user specific events
+            // }             
+          }
+        });
+        
+        socket.on('post timestep update',function(data){
+          if ($username.val() != "" && data.colName ==  $colName){
+            console.log("received server feedback, requesting server side update "+$colName);
+            socket.emit('request server side update',{colName: $colName});
+          }
+        });
+
+        socket.on('sent update to client side',function(data){
+          if ($username.val() != "" && data.colName ==  $colName){
+            //console.log(data);
+            map.highcharts().series[0].setData(updateUserData(data.result));
+            map.highcharts().colorAxis[0].update({dataClasses: updateColorAxis(data.result)});
+            $('#loadingModal').modal("hide");
+
+            var users=[];        //store unique users
+            var userslookup={};  //lookup unique users
+            var usersTotal = {}; //total datavalue
+
+            for (var j in data.result){
+              if (data.result[j].controlleduser != ""){
+                var name = data.result[j].controlleduser;
+                //usersTotal[name] += data.result[j].datavalue;            
+                if (!(name in userslookup)) {
+                  userslookup[name] = 1;
+                  users.push(name);
+                  usersTotal[name] = data.result[j].datavalue;
+                } else {
+                  usersTotal[name] += data.result[j].datavalue;
+                }     
+              }//if occupied
+            }//for
+            updateOnlineUsers(users, usersTotal);
+            if ($('#myModal').is(':visible')){ //only update if modal is open
+                for (var i = 0; i < data.result.length; i++){
+                  // update for those with modal showing
+                  //console.log("looping thru " +i + " of "+ data.result.length + " items, searching for " +data.result[i].name);
+
+                  var country = $("#totaltroopdial").data("country");
+
+                  if ($("#myModalHeader").html() == data.result[i].name){
+                    //console.log("found!");
+                    updateModalInfo(data.result[i],data.result);
+                    // $('#myModalBodyTitle').fadeOut();
+                    // $("#myModalBodyTitle").html("Current troop size: "+data.result[i].datavalue).fadeIn(500);
+                    // $("#troopdial").trigger('configure', {
+                    //     max: data.result[i].datavalue-1});
+                    break; //modal updated, end the routine
+                  }
+                }
+            }
+          }
+        });
+
+        $('#endGameModal').on('hidden.bs.modal', function () {
+          location.reload();
+        });
+
+        function updateOnlineUsers(users, usersTotal){
+          //console.log(usersTotal);
+          html="";
+          if (users.length > 1){gamestarted=true;} //kick-off the game
+          for (i=0;i<users.length;i++){
+            
+            if (usersTotal[$username.val()]==null && gamestarted){ //if game started and your username is no longer in any country
+              $('#endGameModalHeader').text("Defeat");
+              $('#endGameModalMsg').text("You have reached a maximum of "+score +" troops")
+              $('#endGameModal').modal("show");
+              //location.reload();
+            } else if (users.length==1 && users[0]==$username.val() && gamestarted){ //if game started and you're the only one user left
+              $('#endGameModalHeader').text("Victory");
+              $('#endGameModalMsg').text("You have reached a maximum of "+score +" troops")
+              $('#endGameModal').modal("show");
+              //location.reload();
+            }
+            if(users[i]==$username.val()){
+              score = Math.max(score,usersTotal[users[i]]);
+            }
+            html += '<li class="list-group-item"><strong>'+users[i]+"</strong>: "+ '<span class="label label-default">'+usersTotal[users[i]]+'</span>'+' troops</li>';
+          }
+          $users.html(html);
+        }
+
+        function updateModalInfo(point,data){
+          if (point.controlleduser==$username.val()){
+            $('#myModalBodyTitle').fadeOut();
+            $("#myModalBodyTitle").html("Troops deployed in this region: "+point.datavalue+" <small>+10 troops every 10 seconds</small>").fadeIn(500);
+          } else {
+            $("#myModalBodyTitle").html("Currently no troops deployed in this region");
+          }
+          
+          //get ready to update the modal, show loading gif
+          $('#loadingSliders').show();
+          $('#myModalRightPane').hide();
+          $('#btn_sendtroop').attr("disabled",true);
+
+          //obtain current slider values
+          var slidervalue={};
+          var slidervaluesum=0;
+          $('.sliders').each(function(){
+            slidervalue[$(this).context.id]= $(this).context.value;
+            
+          });
+          //console.log("slidervalue:");
+          //console.log(slidervalue);
+
+          var max = 0;
+          var country = {};
+          //find all borders the user controls for a particular country, set to object
+          for (var c in data){
+            if ((point.border.indexOf(data[c].name)!=-1) && (data[c].controlleduser==$username.val())){
+              country[data[c].id]={"datavalue":data[c].datavalue-1,"id":data[c].id, "name":data[c].name, "colorAxisValue":data[c].value}; //to be loaded to html element for parsing
+              max += data[c].datavalue-1; //always leave one behind
+            }
+          }
+          //clear the sliders
+          $("#myModalRightPane").empty();
+          //console.log("country object is: ");
+          //console.log(country);
+
+          for (var d in country){  
+
+            var prev_slidervalue = (slidervalue["slider_"+country[d].id]==null)?country[d].datavalue:Math.min(slidervalue["slider_"+country[d].id],country[d].datavalue); //if prev slider value is not available, min function to cap the prev to currnet max
+            slidervaluesum += prev_slidervalue;
+            $("#myModalRightPane").append('<div class="row"><p class="col-xs-4">'+country[d].name+'</p><div class="col-xs-6"><div class="sliders" id="slider_'+country[d].id+'" style="width:130px;"></div></div><div class="col-xs-2" id="slider_'+country[d].id+'_label">'+prev_slidervalue+'</div></div>'); //create the slider
+            console.log("loop through country: "+country[d].name);
+            $("#slider_"+country[d].id).slider({ //set the slider for country
+                min: 0,
+                max: country[d].datavalue,
+                value: prev_slidervalue,
+                tooltip: "hide" //tooltip out of position known tip
+            });
+
+            $("#slider_"+country[d].id).on('change',function(){
+                var total = 0;
+                $("#"+$(this).context.id+"_label").html($(this).context.value); //update the label
+                console.log("this object is: ");
+                console.log($(this));
+                var lookupid_temp = $(this).context.id;
+                var lookupid = lookupid_temp.replace("slider_","");
+                //console.log(lookupid);
+                country[lookupid].datavalue = $(this).context.value;
+                $('.sliders').each(function(e){ //when one slider changes updates total
+                  total += $(this).context.value; //update total                                           
+                });
+                $("#totaltroopdial").val(total).trigger('change'); //knob update
+                $("#totaltroopdial").data("country",country);
+                
+                //console.log($("#totaltroopdial").data("country"));
+            });
+          }
+          //reset the knob to be the total
+          $('#totaltroopdial').knob({height:200});
+          $("#totaltroopdial").trigger('configure', {
+                max: max
+          });
+          $("#totaltroopdial").val(slidervaluesum).trigger('change');
+          $("#totaltroopdial").data("country",country);//bind object to dial
+          
+          //loading complete
+          $('#loadingSliders').hide();
+          $('#myModalRightPane').show();
+          $('#btn_sendtroop').attr("disabled",false);     
+
+          return !jQuery.isEmptyObject(country);
+        }
+
+        var map = $('#mapContainer');
+
+        socket.on('initiate map',function(data){
+          //console.log("collection: "+data.colName);
+          $userFormArea.hide();
+          $messageArea.show();
+          $mapContainer.show();
+          $('#colName').hide();
+          score=0;
+
+          $('#colName').html(data.colName);
+          $colName = data.colName;
+          //var userMapData = updateUserData(mapData.result);
+          //console.log(userMapData);
+              // Initiate the chart
+          map.highcharts('Map', {
+
+              title: {
+                  text: ''
+              },
+              mapNavigation: {
+                  enabled: true,
+                  buttonOptions: {
+                      verticalAlign: 'bottom'
+                  }
+              },
+              credits: {
+                  enabled: false
+              },
+              colorAxis: {
+                 dataClasses: []//updateColorAxis(userMapData)
+              },
+
+              tooltip: {
+                  headerFormat: '',
+                  pointFormat: '{point.name}: you have deployed <b>{point.datavalue}</b> troops'
+              },
+              series: [{
+                  data:[],//userMapData,
+                  //data: data,
+                  mapData: Highcharts.maps['custom/europe'],
+                  joinBy: ['iso-a2', 'id'],
+                  name: 'Troops data',
+                  states: {
+                      select: {
+                          color: '#BADA55'
+                      }
+                  },
+                  events:{
+                                click: function(e){
+                                    $("#myModalHeader").html(e.point.name);
+                                    var display_modal = updateModalInfo(e.point, this.data);
+                                    if (display_modal){
+                                      socket.emit('click area', {id:e.point.id, colName:$colName});
+                                      $("#myModal").modal({backdrop:"static"}); //show modal but prevent closes upon slider drop
+                                    }
+                                }
+                            }
+              }]
+          });
+          console.log("received server initiate map feedback, requesting server side update "+$colName);
+          socket.emit('request server side update',{colName: $colName});
+
+        });
+
+        $("#btn_sendtroop").click(function(){
+          // var sourceArea = $("#myModalHeader").html();
+          // var targetArea = $("#neighbours").val();
+          var sourceArea = $("#totaltroopdial").data("country");
+          var targetArea = $("#myModalHeader").html();
+          var datavalue = $("#totaltroopdial").val();
+          var controlleduser = $username.val();
+          //var colorAxisValue = $("#myModalHeader").data("colorAxisValue");
+         
+
+          var obj={sourceArea:$("#totaltroopdial").data("country"), targetArea: targetArea, datavalue:datavalue, controlleduser:controlleduser, colName:$colName};
+          for (var index in obj.sourceArea){
+            console.log(obj.sourceArea[index].id);
+          }
+          // console.log(obj);
+
+          socket.emit('transfer area data values', {sourceArea:sourceArea, targetArea: targetArea, datavalue:datavalue, controlleduser:controlleduser, colName:$colName});
+          
+          $('#myModal').modal('toggle');
+          $('#loadingModal').modal("show");
+        });
+
+        socket.on('welcome client side connection',function(data){ //reconnection from sleep/inactivity, DB would have been cleared by then
+          console.log(data);
+          //var n = noty({text: 'noty - a jquery notification library!', theme:'bootstrapTheme'});
+          var n = noty({text: 'Welcome to Viggo', theme:'bootstrapTheme', timeout:1500});
+          socket.emit('request update lobby',{colName:$colName});
+          $userFormArea.show();
+          $('#username').val('');
+          $messageArea.hide();
+          $mapContainer.hide();
+          $('#colName').html('');
+        });
+
+        socket.on('lobby updated',function(){
+          if($userFormArea.is(":visible")){
+            socket.emit('request update lobby',{colName:$colName});
+          }
+        })
+
+        socket.on('sent latest lobby status',function(data){
+          //console.log(data);
+          //update the option boxes
+          var server_html="";
+          var country_html="";
+          var counter=0
+          for (var i in data){
+            server_html+='<option>'+i+'</option>';
+            if (counter==0){
+              for (var j in data[i]){
+                country_html+='<option>'+data[i][j]+'</option>'
+              }   
+            }
+            counter++;
+          }
+          $('#iniServer').data('serverdata',data);
+          $('#iniServer').html(server_html); //populate server list
+          $('#iniCountry').html(country_html); //initialise free country list based on server[0]
+          iniCountry
+        });
+
+        socket.on('user requested slot taken',function(){
+          alert('Name or counry taken, please try another');
+          location.reload();
+        });
+
+        $('#iniServer').change(function(){
+          var data = $('#iniServer').data('serverdata');
+          var index = $('#iniServer option:selected').text();
+          var country_html="";
+          for (var i in data[index]){
+            country_html+='<option>'+data[index][i]+'</option>'
+          }
+          $('#iniCountry').html(country_html);
+
+        });
+        
+        $('#btn_feedback').on('click',function(){
+          window.open("mailto:viggowebgame@gmail.com");
+          //$('#feedbackModal').modal('toggle');
+        });
+
+        $('#feedbackForm').submit(function(){
+          socket.emit('received feedback',$('#inputFeedback').text());
+        });
+
+
+      });
+
+    </script>
+
+    <script src="https://code.highcharts.com/maps/highmaps.js"></script>
+    <script src="https://code.highcharts.com/maps/modules/exporting.js"></script>
+    <script src="https://code.highcharts.com/mapdata/custom/world.js"></script>
+    <script src="https://code.highcharts.com/mapdata/custom/europe.js"></script>
+
+  </body>
+</html>
